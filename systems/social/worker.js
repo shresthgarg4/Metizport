@@ -59,13 +59,14 @@ async function process(client, config) {
             })
             .setTimestamp();
 
-          if (tweet.image) embed.setImage(tweet.image);
+          if (tweet.image) {
+            embed.setImage(tweet.image);
+          }
 
           await channel.send({ embeds: [embed] });
 
-          console.log("✅ Sent tweet:", tweet.id);
+          console.log("✅ Sent:", tweet.id);
 
-          // 🔥 delay (anti spam)
           await new Promise((r) => setTimeout(r, 1500));
         }
       } catch (err) {
