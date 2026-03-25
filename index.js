@@ -13,10 +13,9 @@ const {
   EmbedBuilder,
   AttachmentBuilder,
 } = require("discord.js");
-
-// ❌ REMOVE AUTO DEPLOY
-// require("./deploy-commands.js");
-
+const SocialManager = require("./systems/social/socialManager");
+require("./deploy-commands.js");
+const { scheduledLeaderboard } = require("./systems/levels");
 // ================= CONFIG =================
 const CONFIG = {
   crashLogChannel: process.env.CRASH_LOG_CHANNEL,
@@ -170,7 +169,20 @@ client.once(Events.ClientReady, async () => {
 
   client.crash = new CrashMonitor(client);
 
-  // CORE CHECK LOOP
+  // ✅ SOCIAL SYSTEM START
+  client.social = new SocialManager(client);
+  client.social.start();
+
+  // ✅ LEADERBOARD LOOP
+  setInterval(() => {
+    try {
+      scheduledLeaderboard(client);
+    } catch (e) {
+      console.log("Leaderboard error:", e.message);
+    }
+  }, 60000);
+
+  // ✅ CORE CHECK
   setInterval(() => {
     client.crash.checkCore();
   }, CONFIG.coreCheckInterval);

@@ -12,7 +12,9 @@ const path = require("path");
 const axios = require("axios"); // Make sure axios is imported for import command
 
 const PING_CONFIG_PATH = path.join(__dirname, "../../data/pingconfig.json");
-
+const { getLatestTweet } = require("../../systems/social/platforms/twitter");
+const { getLatestPost } = require("../../systems/social/platforms/instagram");
+const { isLive } = require("../../systems/social/platforms/twitch");
 // ==================== CONFIGURATION ====================
 const PLATFORM_STYLES = {
   twitter: {
@@ -469,6 +471,7 @@ module.exports = {
 
   async execute(interaction) {
     const subcommand = interaction.options.getSubcommand();
+    const socialMonitor = interaction.client.social;
     const config = await loadConfig();
 
     try {
@@ -935,75 +938,37 @@ module.exports = {
         await interaction.deferReply({ flags: 64 });
 
         try {
-          // Import the monitor classes
-          const SocialMonitors = require("../../systems/SocialMonitor");
-
           let content = null;
           let errorDetails = "";
 
           if (platform === "twitter") {
-            console.log(`🔍 Fetching last tweet from @${username}...`);
+            console.log(`🔍 Fetching tweet from @${username}`);
 
-            // Try multiple times with different methods
-            const twitterMonitor = new SocialMonitors.FreeTwitterMonitor();
+            const tweet = await getLatestTweet(username);
 
-            // Try up to 3 times with delay
-            for (let attempt = 1; attempt <= 3; attempt++) {
-              console.log(`  Attempt ${attempt}...`);
-              content = await twitterMonitor.getLatestTweet(username);
-
-              if (content) {
-                console.log(`✅ Found on attempt ${attempt}`);
-
-                // 🔴 YEH 3 LINES ADD KARO - TEXT FIELD ENSURE KARNE KE LIYE
-                if (!content.text) {
-                  content.text =
-                    content.full_text || "Tweet content not available";
-                  console.log(
-                    `📝 Text field fixed: "${content.text.substring(0, 50)}..."`,
-                  );
-                }
-
-                break;
-              }
-
-              if (attempt < 3) {
-                await new Promise((resolve) => setTimeout(resolve, 2000));
-              }
-            }
-
-            if (!content) {
-              errorDetails =
-                "Twitter API might be rate limited or down. Try again later.";
+            if (!tweet) {
+              errorDetails = "No tweet found / rate limited";
+            } else {
+              content = tweet;
             }
           } else if (platform === "twitch") {
-            console.log(`🔍 Fetching last stream from ${username}...`);
-            const twitchMonitor = new SocialMonitors.FreeTwitchMonitor();
-            const stream = await twitchMonitor.getStreamStatus(username);
+            const live = await isLive(username);
 
-            if (stream) {
-              content = {
-                id: stream.id,
-                title: stream.title,
-                game_name: stream.game_name,
-                viewer_count: stream.viewer_count,
-                started_at: stream.started_at,
-                thumbnail_url: stream.thumbnail_url,
-                url: stream.url,
-                profile_image: stream.profile_image,
-              };
+            if (!live) {
+              errorDetails = "User not live";
             } else {
-              errorDetails =
-                "User is not currently live or Twitch API is rate limited.";
+              content = {
+                title: "Live Stream",
+                url: `https://twitch.tv/${username}`,
+              };
             }
           } else if (platform === "instagram") {
-            console.log(`🔍 Fetching last Instagram post from @${username}...`);
-            const instagramMonitor = new SocialMonitors.FreeInstagramMonitor();
-            content = await instagramMonitor.getLatestPost(username);
+            const post = await getLatestPost(username);
 
-            if (!content) {
-              errorDetails =
-                "Instagram is rate limiting (429 error). Try again later.";
+            if (!post) {
+              errorDetails = "Instagram fetch failed";
+            } else {
+              content = post;
             }
           }
 
