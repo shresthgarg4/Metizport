@@ -1,43 +1,33 @@
-// systems/social/platforms/twitter.js
-
 const axios = require("axios");
+const xml2js = require("xml2js");
 
 async function getLatestTweet(username) {
   try {
-    const res = await axios.get(`https://nitter.net/${username}`, {
-      headers: {
-        "User-Agent": "Mozilla/5.0",
-      },
-      timeout: 5000,
-    });
+    const url = `https://nitter.net/${username}/rss`;
 
-    const html = res.data;
+    const res = await axios.get(url, { timeout: 5000 });
 
-    // 🧠 tweet text extract
-    const textMatch = html.match(
-      /<div class="tweet-content media-body">(.*?)<\/div>/,
-    );
+    const parsed = await xml2js.parseStringPromise(res.data);
 
-    const linkMatch = html.match(/href="\/${username}\/status\/(\d+)"/);
+    const items = parsed.rss.channel[0].item;
 
-    if (!textMatch || !linkMatch) {
-      console.log("⚠️ Twitter parse failed:", username);
-      return null;
-    }
+    // 🔥 SKIP PINNED
+    let item = items.find((i) => !i.title[0].startsWith("Pinned"));
+    if (!item) item = items[0];
 
-    const text = textMatch[1]
-      .replace(/<[^>]*>/g, "") // remove HTML
-      .trim();
+    const title = item.title[0];
+    const link = item.link[0];
 
-    const id = linkMatch[1];
+    const idMatch = link.match(/status\/(\d+)/);
+    const id = idMatch ? idMatch[1] : Date.now();
 
     return {
       id,
-      text: text || "No text found",
-      url: `https://twitter.com/${username}/status/${id}`,
+      text: title,
+      url: link,
     };
   } catch (err) {
-    console.log("❌ Twitter fetch failed:", err.message);
+    console.log("❌ Twitter RSS failed:", err.message);
     return null;
   }
 }
