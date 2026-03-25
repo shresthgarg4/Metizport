@@ -1,5 +1,16 @@
 // systems/social/platforms/twitter.js
+
 const axios = require("axios");
+
+function extractText(data) {
+  return (
+    data.text ||
+    data.full_text ||
+    data.legacy?.full_text ||
+    data.legacy?.text ||
+    "No text content"
+  );
+}
 
 async function getLatestTweet(username) {
   try {
@@ -8,12 +19,15 @@ async function getLatestTweet(username) {
       { timeout: 5000 },
     );
 
+    const text = extractText(res.data);
+
     return {
       id: res.data.id_str,
-      text: res.data.text,
+      text: text,
       url: `https://twitter.com/${username}/status/${res.data.id_str}`,
     };
-  } catch {
+  } catch (err) {
+    console.log("❌ Twitter fetch failed:", err.message);
     return null;
   }
 }
