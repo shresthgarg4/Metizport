@@ -1,0 +1,21 @@
+{
+  "author": {
+    "name": "MetizBot",
+    "iconURL": "attachment://pfp.jpg",
+    "url": "https://metizport.com"
+  },
+
+  "thumbnail": "attachment://pfp.jpg",
+
+  "color": "#FFFFFF",
+
+  "footerOptions": ["#riseabovetherest", "#wheregamingmatters"],
+
+  "timestamp": true,
+
+  "description": "No description provided.",
+
+  "foot": "attachment://pfp.jpg",
+
+  "fields": []
+}

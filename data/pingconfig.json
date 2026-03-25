@@ -1,0 +1,50 @@
+{
+  "channels": {
+    "stream-1": {
+      "id": "1479860246087209133",
+      "role": "",
+
+      "twitch": [
+        { "name": "ner0_cs", "enabled": true },
+        { "name": "vins1337xd", "enabled": true },
+        { "name": "forsyy_", "enabled": true },
+        { "name": "dragoncheeeee", "enabled": true },
+        { "name": "isak_cs", "enabled": true },
+        { "name": "Plopsk1", "enabled": true },
+        { "name": "jackinho19", "enabled": true },
+        { "name": "remica_bs", "enabled": true },
+        { "name": "ciro_bs", "enabled": true },
+        { "name": "soski00", "enabled": true },
+        { "name": "nordencast", "enabled": true },
+        { "name": "QuinaiaGG", "enabled": true },
+        { "name": "panda_casts", "enabled": true },
+        { "name": "metizport", "enabled": true }
+      ],
+
+      "twitter": [],
+      "instagram": []
+    },
+
+    "stream-2": {
+      "id": "1479860324315300010",
+      "role": "1478040191649320990",
+
+      "twitter": [
+        { "name": "MetizportBS", "enabled": true },
+        { "name": "Metizport", "enabled": true },
+        { "name": "MetizportCS", "enabled": true },
+        { "name": "MetizportVAL", "enabled": true }
+      ],
+
+      "instagram": [{ "name": "metizport", "enabled": true }],
+
+      "twitch": []
+    }
+  },
+
+  "cache": {
+    "twitter": {},
+    "instagram": {},
+    "twitch": {}
+  }
+}
