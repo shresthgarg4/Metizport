@@ -1,4 +1,5 @@
 // systems/social/platforms/instagram.js
+
 const axios = require("axios");
 
 async function getLatestPost(username) {
@@ -13,15 +14,24 @@ async function getLatestPost(username) {
       },
     );
 
-    const post =
-      res.data.graphql.user.edge_owner_to_timeline_media.edges[0]?.node;
+    // 🛑 SAFE CHECK
+    if (!res.data || !res.data.graphql || !res.data.graphql.user) {
+      console.log("⚠️ Insta structure invalid for:", username);
+      return null;
+    }
 
-    if (!post) return null;
+    const edges = res.data.graphql.user.edge_owner_to_timeline_media.edges;
+
+    if (!edges || edges.length === 0) return null;
+
+    const post = edges[0].node;
 
     return {
       id: post.id,
-      caption: post.edge_media_to_caption.edges[0]?.node?.text || "No caption",
-      image: post.display_url,
+      caption:
+        post.edge_media_to_caption?.edges?.[0]?.node?.text ||
+        post.accessibility_caption ||
+        "No caption",
       url: `https://instagram.com/p/${post.shortcode}`,
     };
   } catch (err) {
