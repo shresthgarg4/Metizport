@@ -1,5 +1,5 @@
 // systems/social/worker.js
-
+const { EmbedBuilder } = require("discord.js");
 const { getLatestTweets } = require("./platforms/twitter");
 const { isLive } = require("./platforms/twitch");
 const { getLatestPost } = require("./platforms/instagram");
