@@ -12,7 +12,7 @@ const path = require("path");
 const axios = require("axios"); // Make sure axios is imported for import command
 
 const PING_CONFIG_PATH = path.join(__dirname, "../../data/pingconfig.json");
-const { getLatestTweet } = require("../../systems/social/platforms/twitter");
+const { getLatestTweets } = require("../../systems/social/platforms/twitter");
 const { getLatestPost } = require("../../systems/social/platforms/instagram");
 const { isLive } = require("../../systems/social/platforms/twitch");
 // ==================== CONFIGURATION ====================
@@ -944,7 +944,7 @@ module.exports = {
           if (platform === "twitter") {
             console.log(`🔍 Fetching tweet from @${username}`);
 
-            const tweet = await getLatestTweet(username);
+            const tweet = await getLatestTweets(username);
 
             if (!tweet) {
               errorDetails = "No tweet found / rate limited";
