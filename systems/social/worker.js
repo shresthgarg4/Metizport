@@ -26,31 +26,48 @@ async function process(client, config) {
       try {
         if (!acc.enabled) continue;
 
-        const tweet = await getLatestTweet(acc.name);
-        if (!tweet || !tweet.id) continue;
+        const tweets = await getLatestTweets(acc.name, 5);
 
-        const cacheKey = `twitter-${acc.name}`;
-        const lastId = cache[cacheKey];
+        for (const tweet of tweets.reverse()) {
+          if (cache[tweet.id]) continue;
 
-        // FIRST TIME → just save
-        if (!lastId) {
-          cache[cacheKey] = tweet.id;
-          console.log(`🧠 Saved initial tweet for ${acc.name}`);
-          continue;
+          cache[tweet.id] = true;
+
+          let color = 0x1da1f2;
+          let title = "🐦 New Post";
+
+          if (tweet.type === "retweet") {
+            title = "🔁 Retweeted";
+            color = 0xf1c40f;
+          } else if (tweet.type === "article") {
+            title = "📰 New Article";
+            color = 0x9b59b6;
+          }
+
+          const embed = new EmbedBuilder()
+            .setColor(color)
+            .setAuthor({
+              name: `${tweet.username} on X`,
+              iconURL: `https://unavatar.io/twitter/${tweet.username}`,
+              url: `https://twitter.com/${tweet.username}`,
+            })
+            .setTitle(title)
+            .setDescription(tweet.text.slice(0, 4000))
+            .setURL(tweet.url)
+            .setFooter({
+              text: "Metizport Social Monitor • #wheregamingmatters",
+            })
+            .setTimestamp();
+
+          if (tweet.image) embed.setImage(tweet.image);
+
+          await channel.send({ embeds: [embed] });
+
+          console.log("✅ Sent tweet:", tweet.id);
+
+          // 🔥 delay (anti spam)
+          await new Promise((r) => setTimeout(r, 1500));
         }
-
-        // SAME → skip
-        if (tweet.id === lastId) continue;
-
-        // NEW → send
-        await channel.send(
-          `🐦 **${acc.name} tweeted:**\n${tweet.text}\n${tweet.url}`,
-        );
-
-        console.log(`✅ New tweet sent: ${acc.name}`);
-
-        // UPDATE CACHE
-        cache[cacheKey] = tweet.id;
       } catch (err) {
         console.log(`❌ Twitter error (${acc.name}):`, err.message);
       }
