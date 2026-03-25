@@ -1,6 +1,6 @@
 // systems/social/worker.js
 
-const { getLatestTweet } = require("./platforms/twitter");
+const { getLatestTweets } = require("./platforms/twitter");
 const { isLive } = require("./platforms/twitch");
 const { getLatestPost } = require("./platforms/instagram");
 const { loadCache, saveCache } = require("../../utils/socialCache");
