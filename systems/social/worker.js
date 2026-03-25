@@ -1,4 +1,3 @@
-// systems/social/worker.js
 const { EmbedBuilder } = require("discord.js");
 const { getLatestTweets } = require("./platforms/twitter");
 const { isLive } = require("./platforms/twitch");
@@ -29,9 +28,16 @@ async function process(client, config) {
         const tweets = await getLatestTweets(acc.name, 5);
 
         for (const tweet of tweets.reverse()) {
+          if (!tweet || !tweet.id) continue;
           if (cache[tweet.id]) continue;
 
           cache[tweet.id] = true;
+
+          // 🧠 SAFE TEXT FIX
+          let text = tweet.text || "No text content";
+          if (text.length < 3 && tweet.image) {
+            text = "📸 Media post";
+          }
 
           let color = 0x1da1f2;
           let title = "🐦 New Post";
@@ -52,22 +58,24 @@ async function process(client, config) {
               url: `https://twitter.com/${tweet.username}`,
             })
             .setTitle(title)
-            .setDescription(tweet.text.slice(0, 4000))
+            .setDescription(text.slice(0, 4000))
             .setURL(tweet.url)
             .setFooter({
               text: "Metizport Social Monitor • #wheregamingmatters",
             })
             .setTimestamp();
 
-          if (tweet.image) {
+          // 🖼️ IMAGE SAFE ADD
+          if (tweet.image && tweet.image.startsWith("http")) {
             embed.setImage(tweet.image);
           }
 
           await channel.send({ embeds: [embed] });
 
-          console.log("✅ Sent:", tweet.id);
+          console.log(`✅ Sent tweet: ${tweet.id}`);
 
-          await new Promise((r) => setTimeout(r, 1500));
+          // ⏱️ anti spam delay
+          await new Promise((r) => setTimeout(r, 1200));
         }
       } catch (err) {
         console.log(`❌ Twitter error (${acc.name}):`, err.message);
@@ -85,17 +93,17 @@ async function process(client, config) {
         const cacheKey = `instagram-${acc.name}`;
         const lastId = cache[cacheKey];
 
-        // FIRST TIME
+        // FIRST RUN → just save
         if (!lastId) {
           cache[cacheKey] = post.id;
-          console.log(`🧠 Saved initial insta post for ${acc.name}`);
+          console.log(`🧠 Init insta cache: ${acc.name}`);
           continue;
         }
 
         if (post.id === lastId) continue;
 
         await channel.send(
-          `📸 **${acc.name} posted:**\n${post.caption}\n${post.url}`,
+          `📸 **${acc.name} posted:**\n${post.caption || "New post"}\n${post.url}`,
         );
 
         console.log(`✅ New insta post: ${acc.name}`);
