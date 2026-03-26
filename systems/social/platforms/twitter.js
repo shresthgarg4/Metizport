@@ -32,11 +32,18 @@ function extractText(item) {
 function extractImage(html) {
   if (!html) return null;
 
-  const media = html.match(/media%2F[^"]+/);
-  if (media) return `https://nitter.net/pic/${media[0]}`;
-
+  // 🔥 ONLY FIRST IMAGE (main tweet)
   const match = html.match(/<img[^>]+src="([^"]+)"/);
-  return match ? match[1] : null;
+  if (!match) return null;
+
+  let url = match[1];
+
+  // fix encoded links
+  if (url.includes("media%2F")) {
+    return "https://nitter.net/pic/" + url.split("pic/")[1];
+  }
+
+  return url;
 }
 
 async function getLatestTweets(username, limit = 5) {

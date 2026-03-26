@@ -40,32 +40,34 @@ async function process(client, config) {
             text = "📸 Media post";
           }
 
+          let label = "posted a new Tweet";
           let color = 0x1da1f2;
-          let title = "🐦 New Post";
 
           if (tweet.type === "retweet") {
-            title = "🔁 Retweeted";
+            label = "retweeted";
             color = 0xf1c40f;
           } else if (tweet.type === "article") {
-            title = "📰 New Article";
+            label = "posted a new Article";
             color = 0x9b59b6;
           }
 
           const embed = new EmbedBuilder()
             .setColor(color)
             .setAuthor({
-              name: `${tweet.username} on X`,
+              name: `@${tweet.username}`,
               iconURL: `https://unavatar.io/twitter/${tweet.username}`,
               url: `https://twitter.com/${tweet.username}`,
             })
-            .setTitle(title)
-            .setDescription(text.slice(0, 4000))
+            .setDescription(
+              `✨ **${tweet.username} ${label}**\n\n${text.slice(0, 3500)}`,
+            )
             .setURL(tweet.url)
             .setFooter({
-              text: "Metizport Social Monitor • #wheregamingmatters",
+              text: "X • Social Monitor",
             })
             .setTimestamp();
 
+          // 🖼️ IMAGE (MAIN ATTRACTION)
           if (tweet.image && tweet.image.startsWith("http")) {
             embed.setImage(tweet.image);
           }
@@ -97,17 +99,28 @@ async function process(client, config) {
 
         if (!lastId) {
           cache[cacheKey] = post.id;
-          console.log(`🧠 Init insta cache: ${acc.name}`);
           continue;
         }
 
         if (post.id === lastId) continue;
 
-        await channel.send(
-          `${rolePing}\n📸 **${acc.name} posted:**\n${post.caption || "New post"}\n${post.url}`,
-        );
+        const embed = new EmbedBuilder()
+          .setColor(0xe1306c)
+          .setAuthor({
+            name: `@${acc.name}`,
+            iconURL: `https://unavatar.io/instagram/${acc.name}`,
+          })
+          .setDescription(
+            `📸 **${acc.name} posted on Instagram**\n\n${post.caption || "New post"}`,
+          )
+          .setURL(post.url)
+          .setFooter({ text: "Instagram • Social Monitor" })
+          .setTimestamp();
 
-        console.log(`✅ New insta post: ${acc.name}`);
+        await channel.send({
+          content: rolePing,
+          embeds: [embed],
+        });
 
         cache[cacheKey] = post.id;
       } catch (err) {
@@ -126,18 +139,29 @@ async function process(client, config) {
         if (live && cache[cacheKey]) continue;
 
         if (live && !cache[cacheKey]) {
-          await channel.send(
-            `${rolePing}\n🟣 **${acc.name} is LIVE!**\nhttps://twitch.tv/${acc.name}`,
-          );
+          const embed = new EmbedBuilder()
+            .setColor(0x9146ff)
+            .setAuthor({
+              name: acc.name,
+              iconURL: `https://unavatar.io/twitch/${acc.name}`,
+            })
+            .setDescription(
+              `🟣 **${acc.name} is LIVE now!**\n\nClick below to watch 🔥`,
+            )
+            .setURL(`https://twitch.tv/${acc.name}`)
+            .setFooter({ text: "Twitch • Live Alert" })
+            .setTimestamp();
 
-          console.log(`🔴 Live detected: ${acc.name}`);
+          await channel.send({
+            content: rolePing,
+            embeds: [embed],
+          });
 
           cache[cacheKey] = true;
         }
 
         if (!live && cache[cacheKey]) {
           cache[cacheKey] = false;
-          console.log(`⚫ Offline reset: ${acc.name}`);
         }
       } catch (err) {
         console.log(`❌ Twitch error (${acc.name}):`, err.message);
