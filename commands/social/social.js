@@ -943,13 +943,12 @@ module.exports = {
 
           if (platform === "twitter") {
             console.log(`🔍 Fetching tweet from @${username}`);
+            const tweets = await getLatestTweets(username, 1);
 
-            const tweet = await getLatestTweets(username);
-
-            if (!tweet) {
+            if (!tweets || tweets.length === 0) {
               errorDetails = "No tweet found / rate limited";
             } else {
-              content = tweet;
+              content = tweets[0];
             }
           } else if (platform === "twitch") {
             const live = await isLive(username);
@@ -1025,10 +1024,19 @@ module.exports = {
             });
 
           if (platform === "twitter") {
+            let text = content.text || "No text content";
+
+            let label = "posted a new Tweet";
+            if (content.type === "retweet") label = "retweeted";
+            if (content.type === "article") label = "posted an article";
+
             embed.setDescription(
-              content.text?.substring(0, 2000) || "No text content",
+              `✨ **${content.username} ${label}**\n\n${text.substring(0, 2000)}`,
             );
-            if (content.media?.length) embed.setImage(content.media[0]);
+
+            if (content.image && content.image.startsWith("http")) {
+              embed.setImage(content.image);
+            }
           } else if (platform === "twitch") {
             embed.setTitle(content.title?.substring(0, 256) || "Live Stream");
             embed.setDescription(
