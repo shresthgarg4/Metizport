@@ -13,12 +13,14 @@ async function process(client, config) {
     let channel;
     try {
       channel = await client.channels.fetch(channelData.id);
-    } catch (err) {
+    } catch {
       console.log(`❌ Channel fetch failed: ${channelData.id}`);
       continue;
     }
 
     if (!channel) continue;
+
+    const rolePing = channelData.role ? `<@&${channelData.role}>` : "";
 
     // ================= TWITTER =================
     for (const acc of channelData.twitter || []) {
@@ -33,7 +35,6 @@ async function process(client, config) {
 
           cache[tweet.id] = true;
 
-          // 🧠 SAFE TEXT FIX
           let text = tweet.text || "No text content";
           if (text.length < 3 && tweet.image) {
             text = "📸 Media post";
@@ -65,16 +66,17 @@ async function process(client, config) {
             })
             .setTimestamp();
 
-          // 🖼️ IMAGE SAFE ADD
           if (tweet.image && tweet.image.startsWith("http")) {
             embed.setImage(tweet.image);
           }
 
-          await channel.send({ embeds: [embed] });
+          await channel.send({
+            content: rolePing,
+            embeds: [embed],
+          });
 
           console.log(`✅ Sent tweet: ${tweet.id}`);
 
-          // ⏱️ anti spam delay
           await new Promise((r) => setTimeout(r, 1200));
         }
       } catch (err) {
@@ -93,7 +95,6 @@ async function process(client, config) {
         const cacheKey = `instagram-${acc.name}`;
         const lastId = cache[cacheKey];
 
-        // FIRST RUN → just save
         if (!lastId) {
           cache[cacheKey] = post.id;
           console.log(`🧠 Init insta cache: ${acc.name}`);
@@ -103,7 +104,7 @@ async function process(client, config) {
         if (post.id === lastId) continue;
 
         await channel.send(
-          `📸 **${acc.name} posted:**\n${post.caption || "New post"}\n${post.url}`,
+          `${rolePing}\n📸 **${acc.name} posted:**\n${post.caption || "New post"}\n${post.url}`,
         );
 
         console.log(`✅ New insta post: ${acc.name}`);
@@ -122,13 +123,11 @@ async function process(client, config) {
         const live = await isLive(acc.name);
         const cacheKey = `twitch-${acc.name}`;
 
-        // already live → skip
         if (live && cache[cacheKey]) continue;
 
-        // went live
         if (live && !cache[cacheKey]) {
           await channel.send(
-            `🟣 **${acc.name} is LIVE!**\nhttps://twitch.tv/${acc.name}`,
+            `${rolePing}\n🟣 **${acc.name} is LIVE!**\nhttps://twitch.tv/${acc.name}`,
           );
 
           console.log(`🔴 Live detected: ${acc.name}`);
@@ -136,7 +135,6 @@ async function process(client, config) {
           cache[cacheKey] = true;
         }
 
-        // went offline → reset
         if (!live && cache[cacheKey]) {
           cache[cacheKey] = false;
           console.log(`⚫ Offline reset: ${acc.name}`);
