@@ -32,10 +32,23 @@ function loadLevels() {
 }
 
 function loadConfig() {
-  if (!fs.existsSync(configPath)) {
-    return { channel: null, ignoreRoles: [] };
+  let config = {
+    channel: null,
+    ignoreRoles: [],
+    allowedChannels: [],
+    xpChannels: [],
+  };
+
+  if (fs.existsSync(configPath)) {
+    const file = JSON.parse(fs.readFileSync(configPath));
+
+    config = {
+      ...config,
+      ...file,
+    };
   }
-  return JSON.parse(fs.readFileSync(configPath));
+
+  return config;
 }
 
 function saveConfig(config) {
@@ -196,7 +209,7 @@ module.exports = {
 */
 
     if (interaction.commandName === "level") {
-      if (config.allowedChannels.length) {
+      if (config.allowedChannels && config.allowedChannels.length) {
         if (!config.allowedChannels.includes(interaction.channel.id)) {
           return interaction.reply({
             content: "❌ This command cannot be used in this channel.",

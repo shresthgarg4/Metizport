@@ -172,7 +172,7 @@ async function messageHandler(message, client) {
     }
   }
 
-  if (config.xpChannels.length) {
+  if (config.xpChannels && config.xpChannels.length) {
     if (!config.xpChannels.includes(message.channel.id)) {
       return;
     }
@@ -206,6 +206,7 @@ async function messageHandler(message, client) {
     const levelChannel = await client.channels.fetch(
       process.env.LEVEL_CHANNEL_ID,
     );
+    l;
 
     if (levelChannel) {
       levelChannel.send(`🎉 <@${userId}> reached **Level ${user.level}**!`);
