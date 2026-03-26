@@ -3,7 +3,7 @@ require("dotenv").config();
 const fs = require("fs");
 const fsp = require("fs").promises;
 const path = require("path");
-
+const { messageHandler } = require("./systems/levels");
 const {
   Client,
   GatewayIntentBits,
@@ -160,6 +160,14 @@ client.on(Events.InteractionCreate, async (i) => {
         .reply({ content: "Error occurred", ephemeral: true })
         .catch(() => {});
     }
+  }
+});
+
+client.on(Events.MessageCreate, async (message) => {
+  try {
+    await messageHandler(message, client);
+  } catch (e) {
+    console.log("Level error:", e.message);
   }
 });
 

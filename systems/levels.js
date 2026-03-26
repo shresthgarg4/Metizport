@@ -235,7 +235,7 @@ let lastUpdate = 0;
 async function scheduledLeaderboard(client) {
   const now = Date.now();
 
-  if (now - leaderboardData.lastUpdate < 30 * 60 * 1000) return;
+  if (now - leaderboardData.lastUpdate < 5 * 60 * 1000) return;
 
   await updateLeaderboard(client);
 }
