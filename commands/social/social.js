@@ -941,8 +941,10 @@ module.exports = {
           let content = null;
           let errorDetails = "";
 
+          // ================= TWITTER =================
           if (platform === "twitter") {
             console.log(`🔍 Fetching tweet from @${username}`);
+
             const tweets = await getLatestTweets(username, 1);
 
             if (!tweets || tweets.length === 0) {
@@ -950,7 +952,10 @@ module.exports = {
             } else {
               content = tweets[0];
             }
-          } else if (platform === "twitch") {
+          }
+
+          // ================= TWITCH =================
+          else if (platform === "twitch") {
             const live = await isLive(username);
 
             if (!live) {
@@ -959,9 +964,15 @@ module.exports = {
               content = {
                 title: "Live Stream",
                 url: `https://twitch.tv/${username}`,
+                game_name: live.game_name || "Unknown",
+                viewer_count: live.viewer_count || "N/A",
+                thumbnail_url: live.thumbnail_url,
               };
             }
-          } else if (platform === "instagram") {
+          }
+
+          // ================= INSTAGRAM =================
+          else if (platform === "instagram") {
             const post = await getLatestPost(username);
 
             if (!post) {
@@ -971,17 +982,16 @@ module.exports = {
             }
           }
 
+          // ================= NO CONTENT =================
           if (!content) {
-            // Create a more helpful error message
             const errorEmbed = new EmbedBuilder()
               .setTitle("❌ No Content Found")
               .setDescription(
                 `Could not fetch any recent post from **${username}** on ${style.name}.\n\n` +
-                  `**Possible reasons:**\n` +
                   `• Account may be private\n` +
-                  `• API rate limiting (try again in 15 minutes)\n` +
-                  `• No recent posts available\n\n` +
-                  `${errorDetails ? `**Details:** ${errorDetails}` : ""}`,
+                  `• Rate limited (try again later)\n` +
+                  `• No recent posts\n\n` +
+                  (errorDetails ? `**Details:** ${errorDetails}` : ""),
               )
               .setColor(0xffaa00)
               .setTimestamp()
@@ -992,17 +1002,20 @@ module.exports = {
             return interaction.editReply({ embeds: [errorEmbed] });
           }
 
-          // Create embed based on platform
+          // ================= EMBED =================
           const embed = new EmbedBuilder()
             .setColor(style.color)
             .setAuthor({
               name:
                 platform === "twitter"
-                  ? `@${username} on X`
+                  ? `@${username}`
                   : platform === "twitch"
-                    ? `${username} is LIVE on Twitch!`
-                    : `@${username} on Instagram`,
-              iconURL: content.profile_image || style.icon,
+                    ? `${username} on Twitch`
+                    : `@${username}`,
+              iconURL:
+                platform === "twitter"
+                  ? `https://unavatar.io/twitter/${username}`
+                  : style.icon,
               url:
                 platform === "twitter"
                   ? `https://twitter.com/${username}`
@@ -1020,9 +1033,10 @@ module.exports = {
               ),
             )
             .setFooter({
-              text: `Metizport Social Monitor • Last ${style.name} Post • #wheregamingmatters`,
+              text: `Metizport Social Monitor • Last ${style.name} Post`,
             });
 
+          // ================= TWITTER UI =================
           if (platform === "twitter") {
             let text = content.text || "No text content";
 
@@ -1037,36 +1051,53 @@ module.exports = {
             if (content.image && content.image.startsWith("http")) {
               embed.setImage(content.image);
             }
-          } else if (platform === "twitch") {
-            embed.setTitle(content.title?.substring(0, 256) || "Live Stream");
-            embed.setDescription(
-              `**Game:** ${content.game_name}\n**Viewers:** ${content.viewer_count}`,
-            );
-            embed.setImage(content.thumbnail_url);
-          } else if (platform === "instagram") {
-            embed.setDescription(
-              content.caption?.substring(0, 2000) || "Instagram post",
-            );
-            if (content.media_url) embed.setImage(content.media_url);
           }
 
+          // ================= TWITCH UI =================
+          else if (platform === "twitch") {
+            embed
+              .setTitle(content.title || "Live Stream")
+              .setDescription(
+                `🟣 **${username} is LIVE!**\n\n🎮 ${content.game_name}\n👁️ ${content.viewer_count} viewers`,
+              );
+
+            if (content.thumbnail_url) {
+              embed.setImage(content.thumbnail_url);
+            }
+          }
+
+          // ================= INSTAGRAM UI =================
+          else if (platform === "instagram") {
+            embed.setDescription(
+              `📸 **${username} posted on Instagram**\n\n${
+                content.caption?.substring(0, 2000) || "New post"
+              }`,
+            );
+
+            if (content.media_url) {
+              embed.setImage(content.media_url);
+            }
+          }
+
+          // ================= SEND =================
           await targetChannel.send({ embeds: [embed] });
 
-          const successEmbed = createSuccessEmbed(
-            "✅ Last Post Fetched",
-            `Successfully fetched the last ${style.name} post from **${username}**`,
-            style.color,
-          );
+          const successEmbed = new EmbedBuilder()
+            .setColor(style.color)
+            .setDescription(
+              `✅ Successfully fetched last ${style.name} post from **${username}**`,
+            );
 
           await interaction.editReply({ embeds: [successEmbed] });
         } catch (error) {
-          console.error(`Error in /social last:`, error);
+          console.error("❌ /social last error:", error);
+
           await interaction.editReply({
             embeds: [
-              createErrorEmbed(
-                "Fetch Failed",
-                `Error fetching post: ${error.message}\n\nTwitter API might be temporarily unavailable. Try again in a few minutes.`,
-              ),
+              new EmbedBuilder()
+                .setColor(0xff0000)
+                .setTitle("❌ Fetch Failed")
+                .setDescription(`Error: ${error.message}`),
             ],
           });
         }
