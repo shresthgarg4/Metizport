@@ -1,3 +1,5 @@
+const axios = require("axios");
+
 const instaErrorShown = {};
 
 async function getLatestPost(username) {
@@ -46,3 +48,5 @@ async function getLatestPost(username) {
     return null;
   }
 }
+
+module.exports = { getLatestPost };
