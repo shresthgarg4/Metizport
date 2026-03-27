@@ -1,6 +1,6 @@
-// systems/social/platforms/instagram.js
-
 const axios = require("axios");
+
+const instaErrorShown = {};
 
 async function getLatestPost(username) {
   try {
@@ -14,9 +14,12 @@ async function getLatestPost(username) {
       },
     );
 
-    // 🛑 SAFE CHECK
+    // ❌ STRUCTURE ISSUE
     if (!res.data || !res.data.graphql || !res.data.graphql.user) {
-      console.log("⚠️ Insta structure invalid for:", username);
+      if (!instaErrorShown[username]) {
+        console.log("⚠️ Insta structure invalid for:", username);
+        instaErrorShown[username] = true;
+      }
       return null;
     }
 
@@ -25,6 +28,12 @@ async function getLatestPost(username) {
     if (!edges || edges.length === 0) return null;
 
     const post = edges[0].node;
+
+    // ✅ SUCCESS → RESET ERROR FLAG
+    if (instaErrorShown[username]) {
+      console.log(`✅ Instagram working again: ${username}`);
+      instaErrorShown[username] = false;
+    }
 
     return {
       id: post.id,
@@ -35,7 +44,10 @@ async function getLatestPost(username) {
       url: `https://instagram.com/p/${post.shortcode}`,
     };
   } catch (err) {
-    console.log("⚠️ Insta fetch failed:", err.message);
+    if (!instaErrorShown[username]) {
+      console.log("⚠️ Insta fetch failed:", err.message);
+      instaErrorShown[username] = true;
+    }
     return null;
   }
 }
