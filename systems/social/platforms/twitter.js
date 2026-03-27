@@ -7,40 +7,48 @@ const INSTANCES = [
   "https://nitter.poast.org",
 ];
 
+// 🔥 TEXT (TITLE FIRST - FRIEND STYLE)
 function extractText(item) {
-  let html = item.description?.[0] || item.title?.[0] || "";
-  if (!html) return "No text content";
+  const title = item.title?.[0] || "";
+  let html = item.description?.[0] || "";
 
-  html = html.replace(/<!\[CDATA\[|\]\]>/g, "");
+  // ✅ ALWAYS prefer title (main tweet text)
+  let text = title;
 
-  const firstP = html.match(/<p>(.*?)<\/p>/i);
-  let text = firstP ? firstP[1] : html;
+  if (!text || text.length < 3) {
+    html = html.replace(/<!\[CDATA\[|\]\]>/g, "");
 
-  text = text
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<[^>]*>/g, "")
-    .replace(/\n+/g, "\n")
-    .trim();
+    const match = html.match(/<p>(.*?)<\/p>/i);
+    text = match ? match[1] : "";
 
-  text = text.replace(/https?:\/\/\S+/g, "").trim();
+    text = text
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<[^>]*>/g, "")
+      .replace(/\n+/g, "\n")
+      .trim();
+  }
 
-  if (!text || text.length < 3) return "No text content";
+  if (!text || text.length < 3) {
+    return "📸 Media post";
+  }
 
   return text;
 }
 
+// 🔥 IMAGE (FIXED + CLEAN)
 function extractImage(html) {
   if (!html) return null;
 
-  // 🔥 ONLY FIRST IMAGE (main tweet)
+  // try normal img
   const match = html.match(/<img[^>]+src="([^"]+)"/);
   if (!match) return null;
 
   let url = match[1];
 
-  // fix encoded links
+  // fix encoded media links
   if (url.includes("media%2F")) {
-    return "https://nitter.net/pic/" + url.split("pic/")[1];
+    const part = url.split("media%2F")[1];
+    return `https://nitter.net/pic/media%2F${part}`;
   }
 
   return url;
@@ -68,26 +76,27 @@ async function getLatestTweets(username, limit = 5) {
         const item = items[i];
         const title = item.title?.[0] || "";
 
+        // ❌ skip pinned
         if (title.startsWith("Pinned")) continue;
 
-        const rawHtml = item.description?.[0] || item.title?.[0] || "";
+        const rawHtml = item.description?.[0] || "";
 
-        let text = extractText(item);
+        const text = extractText(item);
         const image = extractImage(rawHtml);
 
         let type = "post";
         if (title.startsWith("RT by")) type = "retweet";
         else if (title.includes("x.com/i/article")) type = "article";
 
-        const link = item.link?.[0]?.replace("nitter.net", "twitter.com");
+        // 🔥 USE VXTWITTER (BETTER PREVIEW)
+        const link = item.link?.[0]
+          ?.replace("nitter.net", "vxtwitter.com")
+          ?.replace("twitter.com", "vxtwitter.com");
+
         if (!link) continue;
 
         const idMatch = link.match(/status\/(\d+)/);
         const id = idMatch ? idMatch[1] : Date.now() + i;
-
-        if (text === "No text content" && image) {
-          text = "📸 Media post";
-        }
 
         tweets.push({
           id,

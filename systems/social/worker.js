@@ -1,4 +1,9 @@
-const { EmbedBuilder } = require("discord.js");
+const {
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} = require("discord.js");
 const { getLatestTweets } = require("./platforms/twitter");
 const { isLive } = require("./platforms/twitch");
 const { getLatestPost } = require("./platforms/instagram");
@@ -72,9 +77,22 @@ async function process(client, config) {
             embed.setImage(tweet.image);
           }
 
+          const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+              .setLabel("View Tweet 🐦")
+              .setStyle(ButtonStyle.Link)
+              .setURL(tweet.url),
+
+            new ButtonBuilder()
+              .setLabel("Open Profile 👤")
+              .setStyle(ButtonStyle.Link)
+              .setURL(`https://twitter.com/${tweet.username}`),
+          );
+
           await channel.send({
             content: rolePing,
             embeds: [embed],
+            components: [row],
           });
 
           console.log(`✅ Sent tweet: ${tweet.id}`);
@@ -152,9 +170,16 @@ async function process(client, config) {
             .setFooter({ text: "Twitch • Live Alert" })
             .setTimestamp();
 
+          const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+              .setLabel("Watch Stream 🔴")
+              .setStyle(ButtonStyle.Link)
+              .setURL(`https://twitch.tv/${acc.name}`),
+          );
           await channel.send({
             content: rolePing,
             embeds: [embed],
+            components: [row],
           });
 
           cache[cacheKey] = true;
