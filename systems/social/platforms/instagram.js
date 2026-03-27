@@ -1,5 +1,3 @@
-const axios = require("axios");
-
 const instaErrorShown = {};
 
 async function getLatestPost(username) {
@@ -7,15 +5,14 @@ async function getLatestPost(username) {
     const res = await axios.get(
       `https://www.instagram.com/${username}/?__a=1&__d=dis`,
       {
-        headers: {
-          "User-Agent": "Mozilla/5.0",
-        },
+        headers: { "User-Agent": "Mozilla/5.0" },
         timeout: 5000,
       },
     );
 
-    // ❌ STRUCTURE ISSUE
-    if (!res.data || !res.data.graphql || !res.data.graphql.user) {
+    const user = res.data?.graphql?.user;
+
+    if (!user) {
       if (!instaErrorShown[username]) {
         console.log("⚠️ Insta structure invalid for:", username);
         instaErrorShown[username] = true;
@@ -23,13 +20,8 @@ async function getLatestPost(username) {
       return null;
     }
 
-    const edges = res.data.graphql.user.edge_owner_to_timeline_media.edges;
+    const post = user.edge_owner_to_timeline_media.edges[0].node;
 
-    if (!edges || edges.length === 0) return null;
-
-    const post = edges[0].node;
-
-    // ✅ SUCCESS → RESET ERROR FLAG
     if (instaErrorShown[username]) {
       console.log(`✅ Instagram working again: ${username}`);
       instaErrorShown[username] = false;
@@ -38,10 +30,13 @@ async function getLatestPost(username) {
     return {
       id: post.id,
       caption:
-        post.edge_media_to_caption?.edges?.[0]?.node?.text ||
-        post.accessibility_caption ||
-        "No caption",
+        post.edge_media_to_caption?.edges?.[0]?.node?.text || "No caption",
       url: `https://instagram.com/p/${post.shortcode}`,
+      image: post.display_url,
+      likes: post.edge_liked_by.count,
+      comments: post.edge_media_to_comment.count,
+      profile: user.profile_pic_url_hd,
+      username: user.username,
     };
   } catch (err) {
     if (!instaErrorShown[username]) {
@@ -51,5 +46,3 @@ async function getLatestPost(username) {
     return null;
   }
 }
-
-module.exports = { getLatestPost };
