@@ -61,14 +61,7 @@ class CrashMonitor {
   }
 
   async saveCrash(error) {
-    const file = `crash-${Date.now()}.log`;
-    fs.writeFileSync(file, error.stack || error.message);
-
-    await this.sendToDiscord(
-      "💥 Crash Detected",
-      `Error: ${error.message}`,
-      file,
-    );
+    console.log("💥 Crash:", error.message);
   }
 
   async checkCore() {

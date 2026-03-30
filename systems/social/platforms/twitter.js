@@ -48,7 +48,7 @@ function extractImage(html) {
   // fix encoded media links
   if (url.includes("media%2F")) {
     const part = url.split("media%2F")[1];
-    return `https://nitter.net/pic/media%2F${part}`;
+    return `https://pbs.twimg.com/media/${part}`;
   }
 
   return url;
@@ -70,6 +70,18 @@ async function getLatestTweets(username, limit = 5) {
       if (!parsed?.rss) continue;
 
       const items = parsed.rss.channel[0].item;
+
+      // 🔥 SORT BY LATEST TWEET ID (CRITICAL FIX)
+      items.sort((a, b) => {
+        const getId = (item) => {
+          const link = item.link?.[0] || "";
+          const match = link.match(/status\/(\d+)/);
+          return match ? BigInt(match[1]) : 0n;
+        };
+
+        return getId(b) - getId(a);
+      });
+
       const tweets = [];
 
       for (let i = 0; i < items.length && tweets.length < limit; i++) {
@@ -88,10 +100,9 @@ async function getLatestTweets(username, limit = 5) {
         if (title.startsWith("RT by")) type = "retweet";
         else if (title.includes("x.com/i/article")) type = "article";
 
-        // 🔥 USE VXTWITTER (BETTER PREVIEW)
-        const link = item.link?.[0]
-          ?.replace("nitter.net", "vxtwitter.com")
-          ?.replace("twitter.com", "vxtwitter.com");
+        const rawLink = item.link?.[0]?.replace("nitter.net", "twitter.com");
+
+        const previewLink = rawLink?.replace("twitter.com", "vxtwitter.com");
 
         if (!link) continue;
 
@@ -102,7 +113,8 @@ async function getLatestTweets(username, limit = 5) {
           id,
           text,
           image,
-          url: link,
+          url: rawLink,
+          preview: previewLink,
           type,
           username,
         });
