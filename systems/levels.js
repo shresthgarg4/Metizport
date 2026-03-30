@@ -64,7 +64,7 @@ LEADERBOARD EMBED
 function buildLeaderboard() {
   const sorted = Object.entries(levels)
     .filter((u) => u[1].level >= 1)
-    .sort((a, b) => b[1].xp - a[1].xp)
+    .sort((a, b) => b[1].level - a[1].level || b[1].xp - a[1].xp)
     .slice(0, 10);
 
   let description = "";
@@ -206,7 +206,6 @@ async function messageHandler(message, client) {
     const levelChannel = await client.channels.fetch(
       process.env.LEVEL_CHANNEL_ID,
     );
-    l;
 
     if (levelChannel) {
       levelChannel.send(`🎉 <@${userId}> reached **Level ${user.level}**!`);

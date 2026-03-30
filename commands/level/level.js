@@ -174,7 +174,7 @@ module.exports = {
 
       if (!config.xpChannels.includes(channel.id)) {
         config.xpChannels.push(channel.id);
-        saveConfig();
+        saveConfig(config);
       }
 
       return interaction.reply({
@@ -194,7 +194,7 @@ module.exports = {
 
       config.xpChannels = config.xpChannels.filter((c) => c !== channel.id);
 
-      saveConfig();
+      saveConfig(config);
 
       return interaction.reply({
         content: `❌ XP disabled in ${channel}`,
@@ -302,7 +302,7 @@ module.exports = {
     if (interaction.commandName === "levellb") {
       const sorted = Object.entries(levels)
         .filter((u) => u[1].level >= 1)
-        .sort((a, b) => b[1].xp - a[1].xp)
+        .sort((a, b) => b[1].level - a[1].level || b[1].xp - a[1].xp)
         .slice(0, 10);
 
       let description = "";
@@ -369,7 +369,7 @@ module.exports = {
 
       if (!config.allowedChannels.includes(channel.id)) {
         config.allowedChannels.push(channel.id);
-        saveConfig();
+        saveConfig(config);
       }
 
       return interaction.reply({
@@ -391,7 +391,7 @@ module.exports = {
         (c) => c !== channel.id,
       );
 
-      saveConfig();
+      saveConfig(config);
 
       return interaction.reply({
         content: `❌ ${channel} removed from allowed level channels.`,
